@@ -62,3 +62,19 @@ frontend/
   index.html
 start.sh
 ```
+
+## 代码打包下载
+
+执行以下命令可将当前项目打包为 ZIP：
+
+```bash
+./package_code.sh
+```
+
+默认生成文件：`financial-eye-code.zip`（位于项目根目录）。
+
+也可自定义压缩包名称：
+
+```bash
+./package_code.sh my-project.zip
+```
