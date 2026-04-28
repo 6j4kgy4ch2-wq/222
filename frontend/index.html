@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>财务慧眼（Ollama版）</title>
+  <style>
+    body{font-family:Arial,sans-serif;background:#f6f8fa;margin:0}
+    .wrap{max-width:980px;margin:24px auto;background:#fff;padding:20px;border-radius:10px}
+    button{padding:8px 14px;margin-left:8px}
+    pre{background:#0f172a;color:#e2e8f0;padding:14px;border-radius:8px;white-space:pre-wrap}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h2>财务慧眼（连接本地 Ollama）</h2>
+  <p>1) 上传财务文件 2) 调用本地模型分析 3) 返回结构化结果</p>
+
+  <div>
+    <input id="fileInput" type="file" />
+    <button id="uploadBtn">上传</button>
+  </div>
+
+  <div style="margin-top: 12px;">
+    <label>模型：</label>
+    <input id="modelInput" value="qwen2.5:7b" />
+    <button id="analyzeBtn">分析</button>
+  </div>
+
+  <p id="status"></p>
+  <pre id="output">等待操作...</pre>
+</div>
+
+<script>
+  const apiBase = 'http://127.0.0.1:8000/api';
+  let uploadedFilename = null;
+  const statusEl = document.getElementById('status');
+  const outputEl = document.getElementById('output');
+
+  document.getElementById('uploadBtn').onclick = async () => {
+    const file = document.getElementById('fileInput').files[0];
+    if (!file) return alert('请先选择文件');
+
+    const formData = new FormData();
+    formData.append('file', file);
+    statusEl.textContent = '上传中...';
+
+    const res = await fetch(`${apiBase}/upload/`, { method: 'POST', body: formData });
+    const data = await res.json();
+    if (!res.ok) {
+      statusEl.textContent = '上传失败';
+      outputEl.textContent = JSON.stringify(data, null, 2);
+      return;
+    }
+    uploadedFilename = data.filename;
+    statusEl.textContent = `上传成功: ${data.original_name}`;
+    outputEl.textContent = JSON.stringify(data, null, 2);
+  };
+
+  document.getElementById('analyzeBtn').onclick = async () => {
+    if (!uploadedFilename) return alert('请先上传文件');
+    const model = document.getElementById('modelInput').value || null;
+    statusEl.textContent = '分析中（调用本地Ollama）...';
+
+    const res = await fetch(`${apiBase}/analyze/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename: uploadedFilename, model })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      statusEl.textContent = '分析失败';
+      outputEl.textContent = JSON.stringify(data, null, 2);
+      return;
+    }
+    statusEl.textContent = '分析完成';
+    outputEl.textContent = JSON.stringify(data.analysis, null, 2);
+  };
+</script>
+</body>
+</html>
